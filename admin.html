@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - EduFund Fundraising Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Add jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        .report-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .report-option {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .report-option.active {
+            border-color: #2563eb;
+            background: #e6f0ff;
+        }
+        .date-filter {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .date-filter input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .analysis-option {
+            margin-top: 1rem;
+        }
+        .analysis-option label {
+            margin-right: 10px;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        .search-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .search-container input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            flex-grow: 1;
+        }
+
+        .campaign-description {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+.progress-container {
+    width: 100%;
+    margin: 5px 0;
+}
+
+.progress-bar {
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #4CAF50;
+}
+
+.status-pending {
+    color: #FFA500;
+    font-weight: bold;
+}
+
+.status-approved {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.status-rejected {
+    color: #F44336;
+    font-weight: bold;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.close-modal {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.detail-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+}
+
+.detail-section h3 {
+    margin-top: 0;
+    color: #2563eb;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.campaign-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content container">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <img src="logo.webp" alt="EduFund Logo" class="logo">
+                <h1>Admin Panel - EduFund Fundraising Platform</h1>
+            </div>
+            <div class="user-actions">
+                <button onclick="logout()" class="btn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Report Generation Section -->
+        <section class="report-section">
+            <h2>Generate Reports</h2>
+            <div class="report-options">
+                <div class="report-option active" data-report="user">User Report</div>
+                <div class="report-option" data-report="campaign">Campaign Report</div>
+                <div class="report-option" data-report="donation">Donation Report</div>
+            </div>
+            
+            <div class="date-filter">
+                <input type="date" id="startDate" placeholder="Start Date">
+                <input type="date" id="endDate" placeholder="End Date">
+            </div>
+            
+            <div class="analysis-option">
+                <label><input type="checkbox" id="includeAnalysis" checked> Include Data Analysis</label>
+            </div>
+            
+            <button id="generateReport" class="btn">Generate</button>
+            <button id="downloadBtn" class="btn">Download PDF Report</button>
+            
+            <div id="reportContainer" class="report-container">
+                <!-- Report will be displayed here -->
+            </div>
+        </section>
+        
+        <!-- User Management Section -->
+        <section>
+            <h2>Manage Users</h2>
+            <div class="filter-options">
+                <button class="filter-btn active" data-filter="all" onclick="filterUsers('all')">All</button>
+                <button class="filter-btn" data-filter="admin" onclick="filterUsers('admin')">Admin</button>
+                <button class="filter-btn" data-filter="donor" onclick="filterUsers('donor')">Donor</button>
+                <button class="filter-btn" data-filter="student" onclick="filterUsers('student')">Student</button>
+            </div>
+            <div class="search-container">
+                <input type="text" id="userSearchInput" placeholder="Search users by username, email, or ID">
+                <button onclick="searchUsers()">Search</button>
+                <button onclick="clearUserSearch()">Clear</button>
+            </div>
+            <div id="usersContainer">
+                <p class="loading">Loading users...</p>
+            </div>
+        </section>
+        
+        <!-- Campaign Management Section -->
+        <section>
+            <h2>Manage Campaigns</h2>
+            <div class="filter-options">
+                <button class="filter-btn active" data-filter="all" onclick="filterCampaigns('all')">All</button>
+                <button class="filter-btn" data-filter="approved" onclick="filterCampaigns('approved')">Approved</button>
+                <button class="filter-btn" data-filter="pending" onclick="filterCampaigns('pending')">Pending</button>
+                <button class="filter-btn" data-filter="rejected" onclick="filterCampaigns('rejected')">Rejected</button>
+            </div>
+            <div class="search-container">
+                <input type="text" id="campaignSearchInput" placeholder="Search campaigns by title, ID, or status">
+                <button onclick="searchCampaigns()">Search</button>
+                <button onclick="clearCampaignSearch()">Clear</button>
+            </div>
+            <div id="campaignsContainer">
+                <p class="loading">Loading campaigns...</p>
+            </div>
+        </section>
+        
+        <!-- Donation Management Section -->
+        <section>
+            <h2>Manage Donations</h2>
+            <div class="filter-options">
+                <p>Filter by Date</p>
+                <input type="date" id="donationStartDate">
+                <input type="date" id="donationEndDate">
+                <button id="filterDonationsBtn" class="btn" onclick="filterDonationsByDate()">Filter</button>
+                <button id="resetDonationsBtn" class="btn" onclick="loadDonations()">Reset</button>
+            </div>
+            <div class="search-container">
+                <input type="text" id="donationSearchInput" placeholder="Search donations by donor name, campaign, or ID">
+                <button onclick="searchDonations()">Search</button>
+                <button onclick="clearDonationSearch()">Clear</button>
+            </div>
+            <div id="donationsContainer">
+                <p class="loading">Loading donations...</p>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 EduFund Fundraising Platform. All rights reserved.</p>
+    </footer>
+
+    <!-- Existing script content remains the same -->
+    <script>
+        // Base URL for API requests
+        const BASE_URL = 'http://localhost:3000';
+        let allUsers = [];
+        let allCampaigns = [];
+        let allDonations = [];
+        let reportData = [];
+
+        // Ensure login before accessing admin panel
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Load Users
+            loadUsers();
+            // Load Campaigns
+            loadCampaigns();
+            // Load Donations
+            loadDonations();
+
+            // Set up report options and date filters
+            setupReportOptions();
+        });
+
+        function loadUsers() {
+            const token = localStorage.getItem('token');
+            const usersContainer = document.getElementById('usersContainer');
+
+            fetch(`${BASE_URL}/admin/users`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch users');
+                }
+                return response.json();
+            })
+            .then(users => {
+                allUsers = users;
+                displayUsers(users);
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+                usersContainer.innerHTML = `<p class="error">Failed to load users: ${error.message}</p>`;
+            });
+        }
+
+        function displayUsers(users) {
+            const usersContainer = document.getElementById('usersContainer');
+            usersContainer.innerHTML = '';
+
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${users.map(user => `
+                        <tr>
+                            <td>${user.user_id}</td>
+                            <td>${user.username}</td>
+                            <td>${user.email}</td>
+                            <td>${user.role}</td>
+                            <td>
+                                <button onclick="deleteUser(${user.user_id})">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            usersContainer.appendChild(table);
+        }
+
+        function filterUsers(filter) {
+            // Update active button
+            document.querySelectorAll('.filter-options button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('active');
+                }
+            });
+
+            let filteredUsers = allUsers;
+            if (filter !== 'all') {
+                filteredUsers = allUsers.filter(user => user.role === filter);
+            }
+            displayUsers(filteredUsers);
+        }
+
+        function loadCampaigns() {
+            const token = localStorage.getItem('token');
+            const campaignsContainer = document.getElementById('campaignsContainer');
+
+            fetch(`${BASE_URL}/admin/campaigns`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch campaigns');
+                }
+                return response.json();
+            })
+            .then(campaigns => {
+                allCampaigns = campaigns;
+                displayCampaigns(campaigns);
+            })
+            .catch(error => {
+                console.error('Error loading campaigns:', error);
+                campaignsContainer.innerHTML = `<p class="error">Failed to load campaigns: ${error.message}</p>`;
+            });
+        }
+
+        function displayCampaigns(campaigns) {
+    const campaignsContainer = document.getElementById('campaignsContainer');
+    campaignsContainer.innerHTML = '';
+
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Goal Amount</th>
+                <th>Raised Amount</th>
+                <th>Progress</th>
+                <th>Status</th>
+                <th>Creator</th>
+                <th>Dates</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${campaigns.map(campaign => {
+                const progressPercent = Math.min(
+                    Math.round((campaign.raised_amount / campaign.goal_amount) * 100),
+                    100
+                );
+                const startDate = new Date(campaign.start_date).toLocaleDateString();
+                const endDate = new Date(campaign.end_date).toLocaleDateString();
+                
+                return `
+                <tr>
+                    <td>${campaign.project_id}</td>
+                    <td>
+                        <strong>${campaign.title}</strong>
+                        <div class="campaign-description">${campaign.description.substring(0, 50)}${campaign.description.length > 50 ? '...' : ''}</div>
+                    </td>
+                    <td>${campaign.category}</td>
+                    <td>KES ${parseFloat(campaign.goal_amount).toLocaleString()}</td>
+                    <td>KES ${parseFloat(campaign.raised_amount).toLocaleString()}</td>
+                    <td>
+                        <div class="progress-container" style="width: 100px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <small>${progressPercent}%</small>
+                        </div>
+                    </td>
+                    <td class="status-${campaign.status.toLowerCase()}">${campaign.status}</td>
+                    <td>${campaign.username}</td>
+                    <td>
+                        <small><strong>Start:</strong> ${startDate}</small><br>
+                        <small><strong>End:</strong> ${endDate}</small>
+                    </td>
+                    <td>
+                        ${campaign.status === 'pending' ? 
+                        `<button onclick="approveCampaign(${campaign.project_id})">Approve</button>
+                        <button onclick="rejectCampaign(${campaign.project_id})">Reject</button>` : ''}
+                        <button onclick="viewCampaignDetails(${campaign.project_id})">Details</button>
+                        <button onclick="deleteCampaign(${campaign.project_id})">Delete</button>
+                    </td>
+                </tr>
+                `;
+            }).join('')}
+        </tbody>
+    `;
+    campaignsContainer.appendChild(table);
+}
+
+// Add this new function to view campaign details
+function viewCampaignDetails(campaignId) {
+    const token = localStorage.getItem('token');
+    const campaign = allCampaigns.find(c => c.project_id == campaignId);
+    
+    if (!campaign) {
+        alert('Campaign not found');
+        return;
+    }
+
+    // Format dates
+    const startDate = new Date(campaign.start_date).toLocaleDateString();
+    const endDate = new Date(campaign.end_date).toLocaleDateString();
+    const createdDate = new Date(campaign.created_at).toLocaleDateString();
+    
+    // Calculate progress
+    const progressPercent = Math.min(
+        Math.round((campaign.raised_amount / campaign.goal_amount) * 100),
+        100
+    );
+
+    // Create modal content
+    const modalContent = `
+        <div class="modal" id="campaignDetailsModal" style="display: block;">
+            <div class="modal-content" style="max-width: 800px;">
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <h2>${campaign.title}</h2>
+                
+                <div class="campaign-details-grid">
+                    <div class="detail-section">
+                        <h3>Basic Information</h3>
+                        <p><strong>Status:</strong> <span class="status-${campaign.status.toLowerCase()}">${campaign.status}</span></p>
+                        <p><strong>Category:</strong> ${campaign.category}</p>
+                        <p><strong>Creator:</strong> ${campaign.username}</p>
+                        <p><strong>Created:</strong> ${createdDate}</p>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h3>Funding</h3>
+                        <p><strong>Goal:</strong> KES ${parseFloat(campaign.goal_amount).toLocaleString()}</p>
+                        <p><strong>Raised:</strong> KES ${parseFloat(campaign.raised_amount).toLocaleString()}</p>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <p>${progressPercent}% funded</p>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h3>Timeline</h3>
+                        <p><strong>Start Date:</strong> ${startDate}</p>
+                        <p><strong>End Date:</strong> ${endDate}</p>
+                        <p><strong>Days Remaining:</strong> ${calculateDaysRemaining(campaign.end_date)}</p>
+                    </div>
+                </div>
+                
+                <div class="detail-section full-width">
+                    <h3>Description</h3>
+                    <p>${campaign.description}</p>
+                </div>
+                
+                ${campaign.beneficiaries ? `
+                <div class="detail-section">
+                    <h3>Beneficiaries</h3>
+                    <p>${campaign.beneficiaries}</p>
+                </div>` : ''}
+                
+                ${campaign.expected_impact ? `
+                <div class="detail-section">
+                    <h3>Expected Impact</h3>
+                    <p>${campaign.expected_impact}</p>
+                </div>` : ''}
+                
+                ${campaign.challenges ? `
+                <div class="detail-section">
+                    <h3>Challenges</h3>
+                    <p>${campaign.challenges}</p>
+                </div>` : ''}
+                
+                ${campaign.campaign_image ? `
+                <div class="detail-section">
+                    <h3>Campaign Image</h3>
+                    <img src="${BASE_URL}/uploads/${campaign.campaign_image}" alt="Campaign Image" style="max-width: 100%;">
+                </div>` : ''}
+                
+                ${campaign.campaign_video ? `
+                <div class="detail-section">
+                    <h3>Campaign Video</h3>
+                    <a href="${campaign.campaign_video}" target="_blank">View Video</a>
+                </div>` : ''}
+            </div>
+        </div>
+    `;
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.innerHTML = modalContent;
+    document.body.appendChild(modal);
+    
+    // Add click handler to close modal when clicking outside content
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+}
+
+function closeModal() {
+    const modal = document.getElementById('campaignDetailsModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function calculateDaysRemaining(endDate) {
+    const end = new Date(endDate);
+    const now = new Date();
+    const diffTime = end - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    return diffDays > 0 ? diffDays : 'Campaign ended';
+}
+        function filterCampaigns(filter) {
+            // Update active button
+            document.querySelectorAll('.filter-options button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('active');
+                }
+            });
+
+            let filteredCampaigns = allCampaigns;
+            if (filter !== 'all') {
+                filteredCampaigns = allCampaigns.filter(campaign => campaign.status === filter);
+            }
+            displayCampaigns(filteredCampaigns);
+        }
+
+        function loadDonations() {
+            const token = localStorage.getItem('token');
+            const donationsContainer = document.getElementById('donationsContainer');
+
+            fetch(`${BASE_URL}/admin/donations`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch donations');
+                }
+                return response.json();
+            })
+            .then(donations => {
+                allDonations = donations;
+                displayDonations(donations);
+            })
+            .catch(error => {
+                console.error('Error loading donations:', error);
+                donationsContainer.innerHTML = `<p class="error">Failed to load donations: ${error.message}</p>`;
+            });
+        }
+
+        function displayDonations(donations) {
+            const donationsContainer = document.getElementById('donationsContainer');
+            donationsContainer.innerHTML = '';
+
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Donor Name</th>
+                        <th>Amount</th>
+                        <th>Campaign</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${donations.map(donation => `
+                        <tr>
+                            <td>${donation.donation_id}</td>
+                            <td>${donation.donor_name}</td>
+                            <td>KES ${parseFloat(donation.amount).toLocaleString()}</td>
+                            <td>${donation.campaign_title}</td>
+                            <td>${new Date(donation.donation_date).toLocaleDateString()}</td>
+                            <td>
+                                <button onclick="deleteDonation(${donation.donation_id})">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            donationsContainer.appendChild(table);
+        }
+
+        function filterDonationsByDate() {
+            const startDate = document.getElementById('donationStartDate').value;
+            const endDate = document.getElementById('donationEndDate').value;
+
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            const donationsContainer = document.getElementById('donationsContainer');
+
+            fetch(`${BASE_URL}/admin/donations-by-date?startDate=${startDate}&endDate=${endDate}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch donations by date');
+                }
+                return response.json();
+            })
+            .then(donations => {
+                displayDonations(donations);
+            })
+            .catch(error => {
+                console.error('Error filtering donations by date:', error);
+                donationsContainer.innerHTML = `<p class="error">Failed to filter donations: ${error.message}</p>`;
+            });
+        }
+
+        function setupReportOptions() {
+            // Set up report option toggling
+            const reportOptions = document.querySelectorAll('.report-option');
+            reportOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    reportOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Set today as the default end date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('endDate').value = today;
+            
+            // Set 30 days ago as the default start date
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+        }
+
+        function approveCampaign(campaignId) {
+            const token = localStorage.getItem('token');
+            if (confirm('Are you sure you want to approve this campaign?')) {
+                fetch(`${BASE_URL}/admin/approve-campaign/${campaignId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to approve campaign');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                    loadCampaigns(); // Reload campaigns after approval
+                })
+                .catch(error => {
+                    console.error('Error approving campaign:', error);
+                    alert('Failed to approve campaign');
+                });
+            }
+        }
+
+        function rejectCampaign(campaignId) {
+            const token = localStorage.getItem('token');
+            if (confirm('Are you sure you want to reject this campaign?')) {
+                fetch(`${BASE_URL}/admin/reject-campaign/${campaignId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to reject campaign');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                    loadCampaigns(); // Reload campaigns after rejection
+                })
+                .catch(error => {
+                    console.error('Error rejecting campaign:', error);
+                    alert('Failed to reject campaign');
+                });
+            }
+        }
+
+        function deleteUser(userId) {
+            const token = localStorage.getItem('token');
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch(`${BASE_URL}/admin/delete-user/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete user');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                    loadUsers(); // Reload users after deletion
+                })
+                .catch(error => {
+                    console.error('Error deleting user:', error);
+                    alert('Failed to delete user');
+                });
+            }
+        }
+
+        function deleteCampaign(campaignId) {
+            const token = localStorage.getItem('token');
+            if (confirm('Are you sure you want to delete this campaign?')) {
+                fetch(`${BASE_URL}/admin/delete-campaign/${campaignId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete campaign');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                    loadCampaigns(); // Reload campaigns after deletion
+                })
+                .catch(error => {
+                    console.error('Error deleting campaign:', error);
+                    alert('Failed to delete campaign');
+                });
+            }
+        }
+
+        function deleteDonation(donationId) {
+            const token = localStorage.getItem('token');
+            if (confirm('Are you sure you want to delete this donation?')) {
+                fetch(`${BASE_URL}/admin/delete-donation/${donationId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete donation');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                    loadDonations(); // Reload donations after deletion
+                })
+                .catch(error => {
+                    console.error('Error deleting donation:', error);
+                    alert('Failed to delete donation');
+                });
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+
+        // Add report generation and download functionality (previously in the existing script)
+        document.getElementById('generateReport').addEventListener('click', async function() {
+            const reportType = document.querySelector('.report-option.active').getAttribute('data-report');
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const includeAnalysis = document.getElementById('includeAnalysis').checked;
+            
+            const reportContainer = document.getElementById('reportContainer');
+            reportContainer.innerHTML = '<p class="loading">Generating report...</p>';
+            
+            try {
+                let url = '';
+                let headers = [];
+                
+                // Get the token from localStorage
+                const token = localStorage.getItem('token');
+                
+                if (!token) {
+                    reportContainer.innerHTML = '<p class="error">You must be logged in to generate reports.</p>';
+                    return;
+                }
+                
+                switch(reportType) {
+                    case 'user':
+                        url = `${BASE_URL}/admin/users`;
+                        headers = ['ID', 'Username', 'Email', 'Role'];
+                        reportTitle = 'User Report';
+                        break;
+                    case 'campaign':
+                        url = `${BASE_URL}/admin/campaigns`;
+                        headers = ['ID', 'Title', 'Goal Amount', 'Raised Amount', 'Status', 'Created By'];
+                        reportTitle = 'Campaign Report';
+                        break;
+                    case 'donation':
+                        url = startDate && endDate 
+                            ? `${BASE_URL}/admin/donations-by-date?startDate=${startDate}&endDate=${endDate}`
+                            : `${BASE_URL}/admin/donations`;
+                        headers = ['ID', 'Donor Name', 'Amount', 'Campaign', 'Date'];
+                        reportTitle = 'Donation Report';
+                        break;
+                }
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                reportData = await response.json();
+                
+                // Generate the report HTML
+                let tableHtml = `
+                    <h3>${reportTitle} (${new Date().toLocaleDateString()})</h3>
+                    <p>Period: ${startDate || 'All time'} to ${endDate || 'Present'}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                ${headers.map(header => `<th>${header}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                if (reportData.length === 0) {
+                    tableHtml += `<tr><td colspan="${headers.length}">No data available for the selected period.</td></tr>`;
+                } else {
+                    reportData.forEach(item => {
+                        tableHtml += '<tr>';
+                        
+                        switch(reportType) {
+                            case 'user':
+                                tableHtml += `
+                                    <td>${item.user_id}</td>
+                                    <td>${item.username}</td>
+                                    <td>${item.email}</td>
+                                    <td>${item.role}</td>
+                                `;
+                                break;
+                            case 'campaign':
+                                tableHtml += `
+                                    <td>${item.project_id}</td>
+                                    <td>${item.title}</td>
+                                    <td>KES ${parseFloat(item.goal_amount).toLocaleString()}</td>
+                                    <td>KES ${parseFloat(item.raised_amount).toLocaleString()}</td>
+                                    <td>${item.status}</td>
+                                    <td>${item.username}</td>
+                                `;
+                                break;
+                            case 'donation':
+                                tableHtml += `
+                                    <td>${item.donation_id}</td>
+                                    <td>${item.donor_name}</td>
+                                    <td>KES ${parseFloat(item.amount).toLocaleString()}</td>
+                                    <td>${item.campaign_title}</td>
+                                    <td>${new Date(item.donation_date).toLocaleDateString()}</td>
+                                `;
+                                break;
+                        }
+                        
+                        tableHtml += '</tr>';
+                    });
+                }
+                
+                tableHtml += `
+                        </tbody>
+                    </table>
+                `;
+                
+                // Add analysis if requested
+                if (includeAnalysis && reportData.length > 0) {
+                    tableHtml += '<div class="report-analysis"><h4>Data Analysis</h4>';
+                    
+                    switch(reportType) {
+                        case 'user':
+                            // Count users by role
+                            const roleCounts = reportData.reduce((counts, user) => {
+                                counts[user.role] = (counts[user.role] || 0) + 1;
+                                return counts;
+                            }, {});
+                            
+                            tableHtml += `
+                                <p><strong>User Distribution:</strong></p>
+                                <ul>
+                                    ${Object.entries(roleCounts).map(([role, count]) => 
+                                        `<li>${role}: ${count} (${Math.round(count/reportData.length*100)}%)</li>`
+                                    ).join('')}
+                                </ul>
+                                <p><strong>Total Users:</strong> ${reportData.length}</p>
+                            `;
+                            break;
+                            
+                        case 'campaign':
+                            // Analysis by status and funding progress
+                            const statusCounts = reportData.reduce((counts, campaign) => {
+                                counts[campaign.status] = (counts[campaign.status] || 0) + 1;
+                                return counts;
+                            }, {});
+                            
+                            let totalGoal = 0;
+                            let totalRaised = 0;
+                            let fullFundedCount = 0;
+                            
+                            reportData.forEach(campaign => {
+                                const goal = parseFloat(campaign.goal_amount);
+                                const raised = parseFloat(campaign.raised_amount);
+                                
+                                totalGoal += goal;
+                                totalRaised += raised;
+                                
+                                if (raised >= goal) {
+                                    fullFundedCount++;
+                                }
+                            });
+                            
+                            const avgFundingRate = Math.round((totalRaised / totalGoal) * 100);
+                            
+                            tableHtml += `
+                                <p><strong>Campaign Status Distribution:</strong></p>
+                                <ul>
+                                    ${Object.entries(statusCounts).map(([status, count]) => 
+                                        `<li>${status}: ${count} (${Math.round(count/reportData.length*100)}%)</li>`
+                                    ).join('')}
+                                </ul>
+                                <p><strong>Total Campaigns:</strong> ${reportData.length}</p>
+                                <p><strong>Total Funding Goal:</strong> KES ${totalGoal.toLocaleString()}</p>
+                                <p><strong>Total Amount Raised:</strong> KES ${totalRaised.toLocaleString()} (${avgFundingRate}% of goal)</p>
+                                <p><strong>Fully Funded Campaigns:</strong> ${fullFundedCount} (${Math.round(fullFundedCount/reportData.length*100)}%)</p>
+                            `;
+                            break;
+                            
+                        case 'donation':
+                            // Analysis of donations
+                            let totalDonation = 0;
+                            let maxDonation = 0;
+                            let minDonation = Infinity;
+                            
+                            // Group donations by campaign
+                            const campaignDonations = {};
+                            
+                            reportData.forEach(donation => {
+                                const amount = parseFloat(donation.amount);
+                                
+                                totalDonation += amount;
+                                maxDonation = Math.max(maxDonation, amount);
+                                minDonation = Math.min(minDonation, amount);
+                                
+                                // Count by campaign
+                                if (!campaignDonations[donation.campaign_title]) {
+                                    campaignDonations[donation.campaign_title] = 0;
+                                }
+                                campaignDonations[donation.campaign_title] += amount;
+                            });
+                            
+                            // Get top 3 campaigns by donation amount
+                            const topCampaigns = Object.entries(campaignDonations)
+                                .sort((a, b) => b[1] - a[1])
+                                .slice(0, 3);
+                            
+                            const avgDonation = totalDonation / reportData.length;
+                            
+                            tableHtml += `
+                                <p><strong>Donation Statistics:</strong></p>
+                                <p>Total Donations: ${reportData.length}</p>
+                                <p>Total Amount: KES ${totalDonation.toLocaleString()}</p>
+                                <p>Average Donation: KES ${avgDonation.toLocaleString()}</p>
+                                <p>Largest Donation: KES ${maxDonation.toLocaleString()}</p>
+                                <p>Smallest Donation: KES ${minDonation.toLocaleString()}</p>
+                                
+                                <p><strong>Top Campaigns by Donation Amount:</strong></p>
+                                <ul>
+                                    ${topCampaigns.map(([campaign, amount]) => 
+                                        `<li>${campaign}: KES ${amount.toLocaleString()}</li>`
+                                    ).join('')}
+                                </ul>
+                            `;
+                            break;
+                    }
+                    
+                    tableHtml += '</div>';
+                }
+                
+                reportContainer.innerHTML = tableHtml;
+                
+            } catch (error) {
+                console.error('Error generating report:', error);
+                reportContainer.innerHTML = `<p class="error">Error generating report: ${error.message}</p>`;
+            }
+        });
+
+        // Download PDF Report Button
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            if (!reportData || reportData.length === 0) {
+                alert('Please generate a report first.');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(20);
+            doc.text('EduFund Report', 105, 15, null, null, 'center');
+            
+            // Add date
+            const today = new Date();
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${today.toLocaleDateString()} at ${today.toLocaleTimeString()}`, 105, 22, null, null, 'center');
+            
+            const reportType = document.querySelector('.report-option.active').getAttribute('data-report');
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            doc.text(`Period: ${startDate || 'All time'} to ${endDate || 'Present'}`, 105, 28, null, null, 'center');
+            
+            // Prepare table data
+            let headers = [];
+            let data = [];
+            
+            switch(reportType) {
+                case 'user':
+                    headers = [['ID', 'Username', 'Email', 'Role']];
+                    data = reportData.map(user => [
+                        user.user_id,
+                        user.username,
+                        user.email,
+                        user.role
+                    ]);
+                    break;
+                case 'campaign':
+                    headers = [['ID', 'Title', 'Goal Amount', 'Raised Amount', 'Status', 'Created By']];
+                    data = reportData.map(campaign => [
+                        campaign.project_id,
+                        campaign.title.substring(0, 20) + (campaign.title.length > 20 ? '...' : ''),
+                        'KES ' + parseFloat(campaign.goal_amount).toLocaleString(),
+                        'KES ' + parseFloat(campaign.raised_amount).toLocaleString(),
+                        campaign.status,
+                        campaign.username
+                    ]);
+                    break;
+                case 'donation':
+                    headers = [['ID', 'Donor Name', 'Amount', 'Campaign', 'Date']];
+                    data = reportData.map(donation => [
+                        donation.donation_id,
+                        donation.donor_name,
+                        'KES ' + parseFloat(donation.amount).toLocaleString(),
+                        donation.campaign_title.substring(0, 20) + (donation.campaign_title.length > 20 ? '...' : ''),
+                        new Date(donation.donation_date).toLocaleDateString()
+                    ]);
+                    break;
+            }
+            
+            // Create table
+            doc.autoTable({
+                head: headers,
+                body: data,
+                startY: 35,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [37, 99, 235],
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                alternateRowStyles: {
+                    fillColor: [240, 247, 255]
+                }
+            });
+            
+            // Save the PDF
+            doc.save(`EduFund_${reportType.toUpperCase()}_Report_${today.toISOString().slice(0,10)}.pdf`);
+        });
+
+        // Add search functions to the existing script
+        function searchUsers() {
+            const searchTerm = document.getElementById('userSearchInput').value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            const filteredUsers = allUsers.filter(user => 
+                user.username.toLowerCase().includes(searchTerm) || 
+                user.email.toLowerCase().includes(searchTerm) || 
+                user.user_id.toString().includes(searchTerm)
+            );
+
+            displayUsers(filteredUsers);
+        }
+
+        function clearUserSearch() {
+            document.getElementById('userSearchInput').value = '';
+            displayUsers(allUsers);
+        }
+
+        function searchCampaigns() {
+            const searchTerm = document.getElementById('campaignSearchInput').value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            const filteredCampaigns = allCampaigns.filter(campaign => 
+                campaign.title.toLowerCase().includes(searchTerm) || 
+                campaign.project_id.toString().includes(searchTerm) || 
+                campaign.status.toLowerCase().includes(searchTerm)
+            );
+
+            displayCampaigns(filteredCampaigns);
+        }
+
+        function clearCampaignSearch() {
+            document.getElementById('campaignSearchInput').value = '';
+            displayCampaigns(allCampaigns);
+        }
+
+        function searchDonations() {
+            const searchTerm = document.getElementById('donationSearchInput').value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            const filteredDonations = allDonations.filter(donation => 
+                donation.donor_name.toLowerCase().includes(searchTerm) || 
+                donation.campaign_title.toLowerCase().includes(searchTerm) || 
+                donation.donation_id.toString().includes(searchTerm)
+            );
+
+            displayDonations(filteredDonations);
+        }
+
+        function clearDonationSearch() {
+            document.getElementById('donationSearchInput').value = '';
+            displayDonations(allDonations);
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>

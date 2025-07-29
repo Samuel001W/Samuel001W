@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduFund Fundraising Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Add Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="logo.webp" alt="EduFund Logo" class="logo">
+                    <h1 class="central-title">EduFund Fundraising Platform</h1>
+                </div>
+            </div>
+            <nav>
+                <div class="nav-links">
+                    <a href="index.html">Home</a>
+                    <a href="donate.html">Donate</a>
+                    <a href="login.html">Login</a>
+                    <a href="registration.html">Sign Up</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h2>Make a Difference Today</h2>
+                <p>Help our students achieve their dreams by supporting their projects.</p>
+                <a href="donate.html" class="btn">View Projects</a>
+            </div>
+        </section>
+
+        <!-- Improved Statistics Section -->
+        <section class="statistics">
+            <div class="container">
+                <h2>Our Impact</h2>
+                <div class="statistics-grid">
+                    <!-- Total Projects -->
+                    <div class="statistic-card">
+                        <h3>Total Projects</h3>
+                        <p id="totalProjects">Loading...</p>
+                        <small>Active campaigns making a difference</small>
+                    </div>
+                    <!-- Total Donations -->
+                    <div class="statistic-card">
+                        <h3>Total Donations</h3>
+                        <p id="totalDonations">Loading...</p>
+                        <small>Amount raised to support students</small>
+                    </div>
+                    <!-- Pie Chart for User Distribution -->
+                    <div class="statistic-card">
+                        <h3>User Distribution</h3>
+                        <div style="position: relative; height: 200px;">
+                            <canvas id="userPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="featured-projects">
+            <div class="container">
+              <h2>Featured Projects</h2>
+              <div class="project-grid" id="featuredProjects">
+                <!-- Featured projects will be dynamically loaded here -->
+              </div>
+            </div>
+          </section>
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 EduFund Fundraising Platform. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Fetch statistics from the backend
+        async function fetchStatistics() {
+            try {
+                const response = await fetch("http://localhost:3000/statistics");
+                const data = await response.json();
+
+                // Update the DOM with the fetched statistics
+                document.getElementById("totalProjects").textContent = data.totalProjects;
+                document.getElementById("totalDonations").textContent = `KES ${data.totalDonations.toLocaleString()}`;
+
+                // Fetch user distribution data for the pie chart
+                const userResponse = await fetch("http://localhost:3000/user-distribution");
+                const userData = await userResponse.json();
+
+                // Render the pie chart
+                renderPieChart(userData);
+            } catch (error) {
+                console.error("Error fetching statistics:", error);
+                document.getElementById("totalProjects").textContent = "Error";
+                document.getElementById("totalDonations").textContent = "Error";
+            }
+        }
+
+        // Function to render the pie chart
+        function renderPieChart(userData) {
+            const ctx = document.getElementById('userPieChart').getContext('2d');
+            const userPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Students', 'Donors'],
+                    datasets: [{
+                        label: 'User Distribution',
+                        data: [userData.students, userData.donors],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.8)', // Blue for students
+                            'rgba(255, 99, 132, 0.8)'  // Red for donors
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 99, 132, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Allow the chart to fit the container
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'User Distribution (Students vs Donors)'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Fetch statistics on page load
+        document.addEventListener("DOMContentLoaded", fetchStatistics);
+
+        // Fetch featured projects from the backend
+        async function fetchFeaturedProjects() {
+            try {
+            const response = await fetch("http://localhost:3000/featured-projects");
+            if (!response.ok) {
+                throw new Error(`Failed to fetch featured projects: ${response.status}`);
+            }
+            const featuredProjects = await response.json();
+
+            const featuredProjectsContainer = document.getElementById("featuredProjects");
+
+            if (featuredProjects.length === 0) {
+                featuredProjectsContainer.innerHTML = "<p>No featured projects available.</p>";
+                return;
+            }
+
+            // Clear any existing content
+            featuredProjectsContainer.innerHTML = "";
+
+            // Loop through the featured projects and create HTML elements for each
+            featuredProjects.forEach((project) => {
+                const projectDiv = document.createElement("div");
+                projectDiv.classList.add("project");
+
+                // Add project details to the div
+                projectDiv.innerHTML = `
+                ${project.campaign_image ? `<img src="uploads/${project.campaign_image}" alt="${project.title}" style="max-width: 100%; height: auto; border-radius: 8px;">` : ''}
+                <h3>${project.title}</h3>
+                <p>${project.description}</p>
+                <a href="donate.html?project=${project.id}" class="btn">Donate</a>
+                `;
+
+                // Append the project div to the container
+                featuredProjectsContainer.appendChild(projectDiv);
+            });
+            } catch (error) {
+            console.error("Error fetching featured projects:", error);
+            const featuredProjectsContainer = document.getElementById("featuredProjects");
+            featuredProjectsContainer.innerHTML = "<p>Failed to load featured projects. Please try again later.</p>";
+            }
+        }
+
+        // Fetch featured projects on page load
+        document.addEventListener("DOMContentLoaded", fetchFeaturedProjects);
+    </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+body {
+    font-family: Arial, sans-serif;
+    background-image: url('abstract-digital-grid-black-background.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+header {
+    background-color: #004d99;
+    color: white;
+    padding: 1rem 0;
+}
+
+header .header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+header .logo {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    max-width: 150px;
+    height: auto;
+    border-radius: 50%;
+}
+
+header .central-title {
+    margin: 0;
+    flex: 1;
+    text-align: center;
+}
+
+nav {
+    background-color: #004d99;
+    padding: 0.5rem 0;
+}
+
+nav .nav-links {
+    display: flex;
+    justify-content: center;
+}
+
+nav a {
+    color: white;
+    margin: 0 1rem;
+    text-decoration: none;
+}
+
+.registration-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to the top of the remaining space */
+    min-height: calc(100vh - 130px); /* Adjust height to prevent overlap */
+    padding: 2rem 0; /* Add padding to create space around the form */
+}
+
+.registration-box {
+    background-color: white;
+    padding: 2rem;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    text-align: center;
+    width: 400px;
+}
+
+.registration-box h2 {
+    color: #004d99;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.btn {
+    background-color: #FF7F50; /* Orange button */
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    width: 100%;
+}
+
+.btn:hover {
+    background-color: #E67300;
+}
+
+footer {
+    background-color: #004d99;
+    color: white;
+    text-align: center;
+    padding: 1rem 0;
+}
+
+p {
+    margin-top: 1.5rem;
+    color: #666;
+}
+
+p a {
+    color: #004d99;
+    text-decoration: none;
+}
+
+p a:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate - EduFund Fundraising Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Search and filter styles */
+        .search-filter {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .search-filter input, .search-filter select {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .search-filter input {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        /* Campaigns grid container */
+        .campaigns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        /* Campaign card styles */
+        .campaign-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .campaign-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Campaign header */
+        .campaign-header h3 {
+            margin: 0 0 10px 0;
+            color: #2563eb;
+            font-size: 1.25rem;
+        }
+        
+        /* Campaign image */
+        .campaign-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .placeholder-image {
+            width: 100%;
+            height: 200px;
+            background-color: #f8fafc;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            margin-bottom: 15px;
+        }
+        
+        /* Campaign body */
+        .campaign-body {
+            flex: 1;
+        }
+        .campaign-description {
+            color: #475569;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        /* Progress bar */
+        .campaign-progress {
+            margin-bottom: 15px;
+        }
+        .progress-bar {
+            height: 10px;
+            background-color: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+        
+        /* Campaign stats */
+        .campaign-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .campaign-stats span {
+            color: #334155;
+        }
+        .campaign-stats strong {
+            color: #1e293b;
+        }
+        
+        /* Campaign creator */
+        .campaign-creator {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .campaign-creator strong {
+            color: #475569;
+        }
+        
+        /* Donation form */
+        .donation-form-container.hidden {
+            display: none;
+        }
+        .donation-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .donation-form input {
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .donation-form button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .donation-form button:hover {
+            background-color: #45a049;
+        }
+        
+        /* Toggle donation button */
+        .toggle-donation-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+        .toggle-donation-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            .campaigns-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 500px) {
+            .search-filter {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .search-filter input, 
+            .search-filter select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="logo.webp" alt="EduFund Logo" class="logo">
+                    <h1 class="central-title">EduFund Fundraising Platform</h1>
+                </div>
+            </div>
+            <nav>
+                <div class="nav-links">
+                    <a href="index.html">Home</a>
+                    <a href="donate.html">Donate</a>
+                    <a href="login.html">Login</a>
+                    <a href="registration.html">Sign Up</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <h2>Support a Campaign</h2>
+            <!-- Search and filter section -->
+            <div class="search-filter">
+                <input type="text" id="searchCampaigns" placeholder="Search campaigns..." oninput="filterCampaigns()">
+                <select id="filterCampaigns" onchange="filterCampaigns()">
+                    <option value="">All Categories</option>
+                    <option value="education">Education</option>
+                    <option value="health">Health</option>
+                    <option value="upkeep">Upkeep</option>
+                    <option value="others">Others</option>
+                </select>
+            </div>
+            <div class="campaigns-grid" id="campaignsContainer">
+                <!-- Campaigns will be dynamically loaded here -->
+            </div>
+        </div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 EduFund Fundraising Platform. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const BASE_URL = "http://localhost:3000";
+        let allCampaigns = [];
+
+        // Fetch campaigns from the backend
+        async function fetchCampaigns() {
+            try {
+                const response = await fetch(`${BASE_URL}/campaigns`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch campaigns: ${response.status}`);
+                }
+                allCampaigns = await response.json();
+                renderCampaigns(allCampaigns);
+            } catch (error) {
+                console.error("Error fetching campaigns:", error);
+                const container = document.getElementById("campaignsContainer");
+                container.innerHTML = "<p class='error-message'>Failed to load campaigns. Please try again later.</p>";
+            }
+        }
+
+        // Render campaigns with progress bars in grid layout
+        function renderCampaigns(campaigns) {
+            const container = document.getElementById("campaignsContainer");
+            container.innerHTML = ""; // Clear any existing content
+
+            if (campaigns.length === 0) {
+                container.innerHTML = "<p class='no-campaigns'>No campaigns found matching your criteria.</p>";
+                return;
+            }
+
+            // Loop through the campaigns and create HTML elements for each
+            campaigns.forEach((campaign) => {
+                // Calculate progress percentage
+                const progressPercent = Math.min(
+                    Math.round((campaign.raised_amount / campaign.goal_amount) * 100),
+                    100
+                );
+
+                const campaignDiv = document.createElement("div");
+                campaignDiv.classList.add("campaign-card");
+
+                // Add campaign details to the div
+                campaignDiv.innerHTML = `
+                    <div class="campaign-header">
+                        <h3>${campaign.title}</h3>
+                        ${
+                            campaign.campaign_image
+                            ? `<img src="${BASE_URL}/uploads/${campaign.campaign_image}" alt="Campaign Image" class="campaign-image">`
+                            : `<div class="placeholder-image">No Image Available</div>`
+                        }
+                    </div>
+                    <div class="campaign-body">
+                        <p class="campaign-description">${campaign.description.substring(0, 150)}${campaign.description.length > 150 ? '...' : ''}</p>
+                        <div class="campaign-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <p class="progress-text">${progressPercent}% funded</p>
+                        </div>
+                        <div class="campaign-stats">
+                            <span><strong>Goal:</strong> KES ${campaign.goal_amount.toLocaleString()}</span>
+                            <span><strong>Raised:</strong> KES ${campaign.raised_amount.toLocaleString()}</span>
+                        </div>
+                        <p class="campaign-creator"><strong>Created by:</strong> ${campaign.username}</p>
+                    </div>
+                    <div class="campaign-footer">
+                        <button class="toggle-donation-btn" onclick="toggleDonationForm(${campaign.project_id})">Donate Now</button>
+                        <div id="donation-form-${campaign.project_id}" class="donation-form-container hidden">
+                            <form class="donation-form" onsubmit="processDonation(event, ${campaign.project_id})">
+                                <input type="hidden" name="projectId" value="${campaign.project_id}">
+                                <input type="text" name="donorName" placeholder="Your Name" required aria-label="Donor Name">
+                                <input type="tel" name="phone" placeholder="Phone Number (M-Pesa)" required pattern="^[0-9]{10}$" aria-label="Phone Number">
+                                <input type="number" name="amount" placeholder="Donation Amount (KES)" required min="1" aria-label="Donation Amount">
+                                <button type="submit">Donate</button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+
+                // Append the campaign div to the container
+                container.appendChild(campaignDiv);
+            });
+        }
+
+        // Toggle donation form visibility
+        function toggleDonationForm(campaignId) {
+            const formContainer = document.getElementById(`donation-form-${campaignId}`);
+            formContainer.classList.toggle("hidden");
+        }
+
+        // Filter campaigns based on search term and category
+        function filterCampaigns() {
+            const searchTerm = document.getElementById('searchCampaigns').value.toLowerCase();
+            const filterValue = document.getElementById('filterCampaigns').value.toLowerCase();
+            
+            const filteredCampaigns = allCampaigns.filter(campaign => {
+                const matchesSearch = campaign.title.toLowerCase().includes(searchTerm) || 
+                                     campaign.description.toLowerCase().includes(searchTerm);
+                const matchesFilter = filterValue === "" || 
+                                     campaign.category.toLowerCase() === filterValue;
+                return matchesSearch && matchesFilter;
+            });
+            
+            renderCampaigns(filteredCampaigns);
+        }
+
+        // Function to process donations
+        async function processDonation(event, campaignId) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const donorName = form.donorName.value;
+            const phone = form.phone.value;
+            const amount = parseFloat(form.amount.value);
+
+            if (!campaignId || isNaN(campaignId)) {
+                alert("Invalid project ID. Please try again.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/donate`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        projectId: parseInt(campaignId),
+                        donorName,
+                        phone,
+                        amount
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert("Thank you for your donation!");
+                    form.reset(); // Clear the form after successful donation
+                    fetchCampaigns(); // Reload campaigns to show updated amounts
+                    // Hide the donation form after submission
+                    document.getElementById(`donation-form-${campaignId}`).classList.add("hidden");
+                } else {
+                    alert(result.message || "Failed to process donation. Please try again.");
+                }
+            } catch (error) {
+                console.error("Error processing donation:", error);
+                alert("An error occurred while processing your donation. Please try again.");
+            }
+        }
+
+        // Check if the user is logged in
+        document.addEventListener("DOMContentLoaded", function () {
+            const token = localStorage.getItem("token");
+            const user = JSON.parse(localStorage.getItem("user"));
+
+            // If there's no token or user data, redirect to login page
+            if (!token || !user) {
+                alert("You must log in to access this page.");
+                window.location.href = "login.html";
+            } else {
+                // Fetch campaigns on page load
+                fetchCampaigns();
+            }
+        });
+    </script>
+</body>
+</html>

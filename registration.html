@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - EduFund Fundraising Platform</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="logo.webp" alt="EduFund Logo" class="logo">
+                    <h1 class="central-title">EduFund Fundraising Platform</h1>
+                </div>
+            </div>
+            <nav>
+                <div class="nav-links">
+                    <a href="index.html">Home</a>
+                    <a href="donate.html">Donate</a>
+                    <a href="login.html">Login</a>
+                    <a href="registration.html">Sign Up</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="registration-container">
+        <div class="registration-box">
+            <h2>Sign Up</h2>
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select your gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dob">Date of Birth</label>
+                    <input type="date" id="dob" name="dob" required>
+                </div>
+                <div class="form-group">
+                    <label for="userType">User</label>
+                    <select id="userType" name="userType" required onchange="toggleSchoolRegistration()">
+                        <option value="">Donor or Student</option>
+                        <option value="student">Student</option>
+                        <option value="donor">Donor</option>
+                    </select>
+                </div>
+
+                
+                <div id="schoolRegistrationField" style="display: none;">
+                    <div class="form-group">
+                        <label for="schoolRegistrationNumber">School Registration Number</label>
+                        <input type="text" id="schoolRegistrationNumber" name="school_registration_number">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required>
+                </div>
+                <div id="errorMessage" style="display: none; color: red;"></div> <!-- Error message container - now hidden by default -->
+                <button type="submit" class="btn">Sign Up</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Client-side form validation function
+        function validateForm(formData) {
+            const errors = [];
+
+            // Username validation
+            if (!formData.username || formData.username.length < 3) {
+                errors.push("Username must be at least 3 characters long.");
+            }
+
+            // Email validation with regex
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!formData.email || !emailRegex.test(formData.email)) {
+                errors.push("Please enter a valid email address.");
+            }
+
+            // Password validation
+            if (formData.password.length < 8) {
+                errors.push("Password must be at least 8 characters long.");
+            }
+            if (!/[A-Z]/.test(formData.password)) {
+                errors.push("Password must contain at least one uppercase letter.");
+            }
+            if (!/[0-9]/.test(formData.password)) {
+                errors.push("Password must contain at least one number.");
+            }
+
+            // Confirm password validation
+            if (formData.password !== formData.confirmPassword) {
+                errors.push("Passwords do not match.");
+            }
+
+            // Gender validation
+            if (!formData.gender) {
+                errors.push("Please select your gender.");
+            }
+
+            // Date of Birth validation
+            const dob = new Date(formData.dob);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const minAge = 13; // Minimum age requirement
+            const maxAge = 120; // Maximum reasonable age
+            const minDate = new Date(today.getFullYear() - maxAge, today.getMonth(), today.getDate());
+            const maxDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate());
+
+            if (dob >= today) {
+                errors.push("Date of Birth cannot be today or in the future.");
+            } else if (dob > maxDate) {
+                errors.push(`You must be at least ${minAge} years old to register.`);
+            } else if (dob < minDate) {
+                errors.push(`Date of Birth seems incorrect. Please check.`);
+            }
+
+            // User Type validation
+            if (!formData.userType) {
+                errors.push("Please select whether you are a donor or a student.");
+            }
+
+            // School Registration Number validation for students
+            if (formData.userType === 'student' && (!formData.school_registration_number || formData.school_registration_number.trim() === '')) {
+                errors.push("School Registration Number is required for students.");
+            }
+
+            // Phone number validation (simple regex for international numbers)
+            const phoneRegex = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
+            if (!formData.phone || !phoneRegex.test(formData.phone)) {
+                errors.push("Please enter a valid phone number.");
+            }
+
+            return errors;
+        }
+
+        document.getElementById("registrationForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const errorMessage = document.getElementById("errorMessage");
+            errorMessage.innerHTML = ""; // Clear previous error messages
+            errorMessage.style.display = "none"; // Hide error message container initially
+
+            // Remove any existing field-specific error highlights
+            document.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field'));
+
+            // Collect form data
+            const formData = {
+                username: document.getElementById("username").value,
+                email: document.getElementById("email").value,
+                password: document.getElementById("password").value,
+                confirmPassword: document.getElementById("confirmPassword").value,
+                gender: document.getElementById("gender").value,
+                dob: document.getElementById("dob").value,
+                phone: document.getElementById("phone").value,
+                userType: document.getElementById("userType").value,
+                school_registration_number: document.getElementById("userType").value === "student" 
+                    ? document.getElementById("schoolRegistrationNumber").value 
+                    : null,
+            };
+
+            // Validate form data
+            const validationErrors = validateForm(formData);
+
+            // If there are validation errors, display them and stop
+            if (validationErrors.length > 0) {
+                errorMessage.innerHTML = validationErrors.map(error => `<p>• ${error}</p>`).join('');
+                errorMessage.style.display = "block"; // Show error message container
+                return;
+            }
+
+            try {
+                const response = await fetch("http://localhost:3000/register", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success: Show alert and redirect
+                    alert(data.message);
+                    window.location.href = "login.html";
+                } else {
+                    // Server-side error: Display server message
+                    if (data.field) {
+                        // Highlight the specific field with the error
+                        const errorField = document.getElementById(data.field);
+                        if (errorField) {
+                            errorField.classList.add('error-field');
+                        }
+                    }
+                    errorMessage.innerHTML = `<p>• ${data.message || "Registration failed. Please try again."}</p>`;
+                    errorMessage.style.display = "block"; // Show error message container
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                errorMessage.innerHTML = `<p>• Connection failed. Please check your internet connection and try again.</p>`;
+                errorMessage.style.display = "block"; // Show error message container
+            }
+        });
+
+        // Toggle school registration field visibility
+        function toggleSchoolRegistration() {
+            const userType = document.getElementById('userType').value;
+            const schoolRegistrationField = document.getElementById('schoolRegistrationField');
+            const schoolRegistrationInput = document.getElementById('schoolRegistrationNumber');
+            
+            if (userType === 'student') {
+                schoolRegistrationField.style.display = 'block';
+                schoolRegistrationInput.required = true;
+            } else {
+                schoolRegistrationField.style.display = 'none';
+                schoolRegistrationInput.required = false;
+            }
+        }
+    </script>
+</body>
+</html>
